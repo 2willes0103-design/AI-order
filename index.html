@@ -599,7 +599,7 @@
         async function fetchAdminStatus() {
             const statusDiv = document.getElementById('admin-current-status');
             try {
-                const res = await fetch(`${GAS_URL}?action=get_status`);
+                const res = await fetch(`${GAS_URL}?action=get_status&_t=${Date.now()}`);
                 if (!res.ok) throw new Error('伺服器回傳錯誤');
                 const data = await res.json();
                 if (data.active_restaurant) {
@@ -645,7 +645,7 @@
 
             document.getElementById('loader').style.display = 'block';
             try {
-                const res = await fetch(`${GAS_URL}?action=get_status`, {
+                const res = await fetch(`${GAS_URL}?action=get_status&_t=${Date.now()}`, {
                     method: 'GET',
                     cache: 'no-cache'
                 });
@@ -860,17 +860,12 @@
                 });
                 
                 const result = await res.json();
-                console.log("GAS 回傳結果:", result);
-                
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-                
-                if (result.status === "success" || !result.error) {
-                    alert(`訂單已成功傳送至 Google！\n訂單人: ${payload.user_name}\n品項數: ${payload.items.length} 項`);
+                console.log("GAS 回傳結果:", JSON.stringify(result));
+
+                if (result.status === "success") {
                     showView('view-summary');
                 } else {
-                    throw new Error('Google 腳本未回傳成功狀態');
+                    throw new Error(result.error || `GAS 回傳異常: ${JSON.stringify(result)}`);
                 }
                 
             } catch (e) {
@@ -915,7 +910,7 @@
         async function showAllOrders() {
             document.getElementById('loader').style.display = 'block';
             try {
-                const res = await fetch(`${GAS_URL}?action=get_all_orders`);
+                const res = await fetch(`${GAS_URL}?action=get_all_orders&_t=${Date.now()}`);
                 const data = await res.json();
                 const container = document.getElementById('all-orders-container');
 
