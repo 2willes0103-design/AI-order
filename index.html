@@ -436,6 +436,7 @@
 
                 <button class="btn btn-primary" id="save-to-lib-btn" onclick="saveToLibraryOnly()">建立新開團</button>
                 <button class="btn btn-outline" onclick="showAllOrders()">查看其他人點什麼</button>
+                <button class="btn btn-outline" onclick="initOrdersSheet()" style="border-color:#f59e0b; color:#f59e0b;">更新試算表欄位</button>
                 <button class="btn btn-outline" onclick="showView('view-home')">返回首頁</button>
             </div>
         </div>
@@ -496,6 +497,23 @@
                 </div>
             `).join('');
             } catch (e) { listDiv.innerHTML = `<p style="color: #ef4444; padding: 1rem;">載入失敗: ${e.message}</p>`; }
+        }
+
+        async function initOrdersSheet() {
+            document.getElementById('loader').style.display = 'block';
+            try {
+                const res = await fetch(`${GAS_URL}?action=init_orders_sheet`);
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert('試算表欄位已更新！Orders 分頁現在包含「金額」欄位。');
+                } else {
+                    throw new Error(result.error || '更新失敗');
+                }
+            } catch (e) {
+                alert('更新失敗: ' + e.message);
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
         }
 
         async function activateFromLibrary(name) {

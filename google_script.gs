@@ -43,6 +43,12 @@ function doGet(e) {
       return response({ menu: menu });
     }
 
+    if (action === "init_orders_sheet") {
+      const orderSheet = getOrCreateSheet(ss, "Orders", [["餐廳", "訂購人", "餐點", "數量", "金額", "備註"]]);
+      orderSheet.getRange(1, 1, 1, 6).setValues([["餐廳", "訂購人", "餐點", "數量", "金額", "備註"]]);
+      return response({ status: "success" });
+    }
+
     if (action === "get_all_orders") {
       const orderSheet = ss.getSheetByName("Orders");
       if (!orderSheet) return response({ orders: [] });
