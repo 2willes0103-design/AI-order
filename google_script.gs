@@ -53,9 +53,20 @@ function doGet(e) {
       const orderSheet = ss.getSheetByName("Orders");
       if (!orderSheet) return response({ orders: [] });
       const rows = orderSheet.getDataRange().getValues();
-      const orders = rows.slice(1).map(r => ({
-        restaurant: r[0], user: r[1], item: r[2], qty: r[3], amount: r[4], note: r[5]
-      }));
+      const orders = rows.slice(1).map(r => {
+        // 判斷是新格式(6欄含金額)還是舊格式(5欄無金額)
+        // 新格式：r[4] 是數字(金額)，r[5] 是備註
+        // 舊格式：r[4] 是備註文字
+        const col4IsAmount = r[4] !== '' && !isNaN(parseFloat(r[4]));
+        return {
+          restaurant: r[0] || '',
+          user: r[1] || '',
+          item: r[2] || '',
+          qty: r[3] || 0,
+          amount: col4IsAmount ? parseFloat(r[4]) : 0,
+          note: col4IsAmount ? (r[5] || '') : (r[4] || '')
+        };
+      });
       return response({ orders: orders });
     }
   } catch (err) {
