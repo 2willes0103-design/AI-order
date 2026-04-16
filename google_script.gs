@@ -93,6 +93,8 @@ function doPost(e) {
 
     if (action === "submit_order") {
       const orderSheet = getOrCreateSheet(ss, "Orders", [["餐廳", "訂購人", "餐點", "數量", "金額", "備註"]]);
+      // 確保標題列包含金額欄（相容舊版沒有金額的分頁）
+      orderSheet.getRange(1, 1, 1, 6).setValues([["餐廳", "訂購人", "餐點", "數量", "金額", "備註"]]);
       if (data.items && data.items.length > 0) {
         const orderRows = data.items.map((item, index) => [
           data.restaurant_name || "",
