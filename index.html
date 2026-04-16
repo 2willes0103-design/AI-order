@@ -904,13 +904,21 @@
                 if (!data.orders || data.orders.length === 0) {
                     container.innerHTML = `<p style="color:#94a3b8; text-align:center;">目前還沒有任何訂單</p>`;
                 } else {
-                    // 依訂購人分組
-                    const grouped = {};
-                    data.orders.forEach(o => {
-                        if (!grouped[o.user]) grouped[o.user] = { items: [], total: 0, note: '' };
-                        grouped[o.user].items.push(o);
-                        grouped[o.user].total += parseFloat(o.amount) || 0;
-                        if (o.note) grouped[o.user].note = o.note;
+                    // 統一格式：相容舊版陣列格式與新版物件格式
+                    const normalized = data.orders.map(o => {
+                        if (Array.isArray(o)) {
+                            // 新欄位：餐廳(0), 訂購人(1), 餐點(2), 數量(3), 金額(4), 備註(5)
+                            // 舊欄位：時間(0), 訂購人(1), 項目(2), 數量(3), 備註(4)
+                            const isNew = o.length >= 6;
+                            return {
+                                user: o[1] || '',
+                                item: o[2] || '',
+                                qty: o[3] || 0,
+                                amount: isNew ? (o[4] || 0) : 0,
+                                note: isNew ? (o[5] || '') : (o[4] || '')
+                            };
+                        }
+                        return o;
                     });
 
                     // 表頭
@@ -921,7 +929,7 @@
 
                     // 每筆訂單列
                     let grandTotal = 0;
-                    const rows = data.orders.map(o => {
+                    const rows = normalized.map(o => {
                         grandTotal += parseFloat(o.amount) || 0;
                         return `
                         <div style="display:grid; grid-template-columns:2fr 3fr 1fr 1.5fr; gap:4px; padding:8px 4px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.95rem; align-items:center;">
