@@ -378,7 +378,7 @@
                 <h2 style="color: #22c55e; margin-bottom: 0.5rem;">訂單發送成功！</h2>
                 <p style="color: #94a3b8;">訂單已成功送出</p>
             </div>
-            <button class="btn btn-primary" onclick="showAllOrders()">其他人點什麼</button>
+            <button class="btn btn-primary" onclick="showAllOrders('view-summary')">其他人點什麼</button>
             <button class="btn btn-outline" onclick="showView('view-admin')">進入管理員模式</button>
             <button class="btn btn-outline" onclick="location.reload()">回到首頁開始新點餐</button>
         </div>
@@ -389,7 +389,8 @@
                 <h2 style="margin-bottom:1.5rem; text-align:center;">本次所有訂單</h2>
                 <div id="all-orders-container"></div>
             </div>
-            <button class="btn btn-outline" onclick="showView('view-summary')">返回</button>
+            <button class="btn btn-outline" onclick="showAllOrders(previousView)">重新整理</button>
+            <button id="orders-back-btn" class="btn btn-outline" onclick="showView('view-summary')">返回</button>
         </div>
 
         <!-- View: Admin -->
@@ -435,8 +436,7 @@
                 </div>
 
                 <button class="btn btn-primary" id="save-to-lib-btn" onclick="saveToLibraryOnly()">建立新開團</button>
-                <button class="btn btn-outline" onclick="showAllOrders()">查看其他人點什麼</button>
-                <button class="btn btn-outline" onclick="initOrdersSheet()" style="border-color:#f59e0b; color:#f59e0b;">更新試算表欄位</button>
+                <button class="btn btn-outline" onclick="showAllOrders('view-admin')">查看其他人點什麼</button>
                 <button class="btn btn-outline" onclick="showView('view-home')">返回首頁</button>
             </div>
         </div>
@@ -462,6 +462,7 @@
         let activeRestaurant = "";
         let menuData = [];
         let orderDetails = {};
+        let previousView = 'view-summary';
 
         function showView(viewId) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -907,14 +908,20 @@
             showView('view-confirm');
         }
 
-        async function showAllOrders() {
+        async function showAllOrders(fromView = 'view-summary') {
+            previousView = fromView;
+            const backBtn = document.getElementById('orders-back-btn');
+            if (backBtn) backBtn.setAttribute('onclick', `showView('${fromView}')`);
+
             document.getElementById('loader').style.display = 'block';
             try {
                 const res = await fetch(`${GAS_URL}?action=get_all_orders&_t=${Date.now()}`);
                 const data = await res.json();
                 const container = document.getElementById('all-orders-container');
 
-                if (!data.orders || data.orders.length === 0) {
+                if (data.error) {
+                    container.innerHTML = `<p style="color:#ef4444; text-align:center; padding:1rem;">GAS 回傳錯誤：${data.error}</p>`;
+                } else if (!data.orders || data.orders.length === 0) {
                     container.innerHTML = `<p style="color:#94a3b8; text-align:center;">目前還沒有任何訂單</p>`;
                 } else {
                     // 統一格式：相容舊版陣列格式與新版物件格式
