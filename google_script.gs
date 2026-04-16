@@ -93,6 +93,16 @@ function doPost(e) {
       return response({ status: "success" });
     }
 
+    if (action === "delete_from_library") {
+      const libSheet = ss.getSheetByName("Library");
+      if (!libSheet) return response({ status: "success" });
+      const rows = libSheet.getDataRange().getValues();
+      for (let i = rows.length - 1; i >= 1; i--) {
+        if (rows[i][0] === data.restaurant_name) libSheet.deleteRow(i + 1);
+      }
+      return response({ status: "success" });
+    }
+
     if (action === "set_active_restaurant") {
       const config = getOrCreateSheet(ss, "Config", [["Key", "Value"]]);
       config.getRange(2, 2).setValue(data.restaurant_name);

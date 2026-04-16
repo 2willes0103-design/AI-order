@@ -546,6 +546,25 @@
             finally { document.getElementById('loader').style.display = 'none'; }
         }
 
+        async function deleteFromLibrary(name) {
+            if (!confirm(`確定要從資料庫刪除「${name}」嗎？`)) return;
+            document.getElementById('loader').style.display = 'block';
+            try {
+                const res = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete_from_library', restaurant_name: name })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    loadLibrary();
+                } else {
+                    throw new Error(result.error || '刪除失敗');
+                }
+            } catch (e) { alert('刪除失敗: ' + e.message); }
+            finally { document.getElementById('loader').style.display = 'none'; }
+        }
+
         async function saveToLibraryOnly() {
             const resName = document.getElementById('newResName').value;
             if (!resName) return alert('請填寫本次要建立的餐廳名稱');
