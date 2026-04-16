@@ -45,8 +45,12 @@ function doGet(e) {
 
     if (action === "get_all_orders") {
       const orderSheet = ss.getSheetByName("Orders");
-      const data = orderSheet ? orderSheet.getDataRange().getValues() : [];
-      return response({ orders: data.slice(1) });
+      if (!orderSheet) return response({ orders: [] });
+      const rows = orderSheet.getDataRange().getValues();
+      const orders = rows.slice(1).map(r => ({
+        restaurant: r[0], user: r[1], item: r[2], qty: r[3], amount: r[4], note: r[5]
+      }));
+      return response({ orders: orders });
     }
   } catch (err) {
     return response({ error: err.toString() });
@@ -88,16 +92,17 @@ function doPost(e) {
     }
 
     if (action === "submit_order") {
-      const orderSheet = getOrCreateSheet(ss, "Orders", [["餐廳", "訂購人", "餐點", "數量", "備註"]]);
+      const orderSheet = getOrCreateSheet(ss, "Orders", [["餐廳", "訂購人", "餐點", "數量", "金額", "備註"]]);
       if (data.items && data.items.length > 0) {
         const orderRows = data.items.map((item, index) => [
           data.restaurant_name || "",
           data.user_name,
           item.name,
           item.qty,
+          (parseFloat(item.price) || 0) * item.qty,
           index === 0 ? (data.note || "") : ""
         ]);
-        orderSheet.getRange(orderSheet.getLastRow() + 1, 1, orderRows.length, 5).setValues(orderRows);
+        orderSheet.getRange(orderSheet.getLastRow() + 1, 1, orderRows.length, 6).setValues(orderRows);
       }
       return response({ status: "success" });
     }

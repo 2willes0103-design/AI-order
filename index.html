@@ -378,9 +378,18 @@
                 <h2 style="color: #22c55e; margin-bottom: 0.5rem;">訂單發送成功！</h2>
                 <p style="color: #94a3b8;">訂單已成功送出</p>
             </div>
-            <button class="btn btn-primary" onclick="window.open(GAS_URL + '?action=get_all_orders')">其他人點什麼</button>
+            <button class="btn btn-primary" onclick="showAllOrders()">其他人點什麼</button>
             <button class="btn btn-outline" onclick="showView('view-admin')">進入管理員模式</button>
             <button class="btn btn-outline" onclick="location.reload()">回到首頁開始新點餐</button>
+        </div>
+
+        <!-- View: All Orders -->
+        <div id="view-all-orders" class="view">
+            <div class="card" style="text-align:left; padding:1.5rem;">
+                <h2 style="margin-bottom:1.5rem; text-align:center;">本次所有訂單</h2>
+                <div id="all-orders-container"></div>
+            </div>
+            <button class="btn btn-outline" onclick="showView('view-summary')">返回</button>
         </div>
 
         <!-- View: Admin -->
@@ -804,7 +813,10 @@
         async function submitOrder() {
             const items = Object.entries(orderDetails)
                 .filter(([_, qty]) => qty > 0)
-                .map(([name, qty]) => ({ name, qty }));
+                .map(([name, qty]) => {
+                    const found = menuData.find(m => m.name === name);
+                    return { name, qty, price: found ? (parseFloat(found.price) || 0) : 0 };
+                });
 
             if (items.length === 0) return alert('您還沒有選擇任何餐點喔！');
 
@@ -879,6 +891,49 @@
         `;
 
             showView('view-confirm');
+        }
+
+        async function showAllOrders() {
+            document.getElementById('loader').style.display = 'block';
+            try {
+                const res = await fetch(`${GAS_URL}?action=get_all_orders`);
+                const data = await res.json();
+                const container = document.getElementById('all-orders-container');
+
+                if (!data.orders || data.orders.length === 0) {
+                    container.innerHTML = `<p style="color:#94a3b8; text-align:center;">目前還沒有任何訂單</p>`;
+                } else {
+                    // 依訂購人分組
+                    const grouped = {};
+                    data.orders.forEach(o => {
+                        if (!grouped[o.user]) grouped[o.user] = { items: [], total: 0, note: '' };
+                        grouped[o.user].items.push(o);
+                        grouped[o.user].total += parseFloat(o.amount) || 0;
+                        if (o.note) grouped[o.user].note = o.note;
+                    });
+
+                    container.innerHTML = Object.entries(grouped).map(([user, info]) => `
+                        <div style="margin-bottom:1.5rem; background:rgba(255,255,255,0.05); border-radius:16px; padding:1rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+                                <span style="font-weight:700; font-size:1.1rem; color:var(--primary);">${user}</span>
+                                <span style="font-weight:700; color:var(--secondary);">合計 $${info.total}</span>
+                            </div>
+                            ${info.items.map(o => `
+                                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.95rem;">
+                                    <span>${o.item} × ${o.qty}</span>
+                                    <span style="color:#94a3b8;">$${o.amount}</span>
+                                </div>
+                            `).join('')}
+                            ${info.note ? `<p style="margin-top:0.6rem; font-size:0.8rem; color:#94a3b8;">備註：${info.note}</p>` : ''}
+                        </div>
+                    `).join('');
+                }
+                showView('view-all-orders');
+            } catch (e) {
+                alert('載入失敗: ' + e.message);
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
         }
 
         // --- Admin Logic ---
