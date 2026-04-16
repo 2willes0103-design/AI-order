@@ -912,21 +912,33 @@
                         if (o.note) grouped[o.user].note = o.note;
                     });
 
-                    container.innerHTML = Object.entries(grouped).map(([user, info]) => `
-                        <div style="margin-bottom:1.5rem; background:rgba(255,255,255,0.05); border-radius:16px; padding:1rem;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
-                                <span style="font-weight:700; font-size:1.1rem; color:var(--primary);">${user}</span>
-                                <span style="font-weight:700; color:var(--secondary);">合計 $${info.total}</span>
-                            </div>
-                            ${info.items.map(o => `
-                                <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.95rem;">
-                                    <span>${o.item} × ${o.qty}</span>
-                                    <span style="color:#94a3b8;">$${o.amount}</span>
-                                </div>
-                            `).join('')}
-                            ${info.note ? `<p style="margin-top:0.6rem; font-size:0.8rem; color:#94a3b8;">備註：${info.note}</p>` : ''}
-                        </div>
-                    `).join('');
+                    // 表頭
+                    const tableHeader = `
+                        <div style="display:grid; grid-template-columns:2fr 3fr 1fr 1.5fr; gap:4px; padding:8px 4px; border-bottom:2px solid rgba(255,255,255,0.15); margin-bottom:6px; font-size:0.85rem; color:#94a3b8; font-weight:600;">
+                            <span>訂購人</span><span>餐點</span><span style="text-align:center;">數量</span><span style="text-align:right;">金額</span>
+                        </div>`;
+
+                    // 每筆訂單列
+                    let grandTotal = 0;
+                    const rows = data.orders.map(o => {
+                        grandTotal += parseFloat(o.amount) || 0;
+                        return `
+                        <div style="display:grid; grid-template-columns:2fr 3fr 1fr 1.5fr; gap:4px; padding:8px 4px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.95rem; align-items:center;">
+                            <span style="font-weight:600; color:var(--primary);">${o.user}</span>
+                            <span>${o.item}${o.note ? `<br><span style="font-size:0.75rem; color:#94a3b8;">備註：${o.note}</span>` : ''}</span>
+                            <span style="text-align:center;">${o.qty}</span>
+                            <span style="text-align:right; font-weight:600;">$${o.amount}</span>
+                        </div>`;
+                    }).join('');
+
+                    // 合計列
+                    const totalRow = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem; padding:12px 4px; border-top:2px solid rgba(255,255,255,0.2);">
+                            <span style="font-weight:700;">合計</span>
+                            <span style="font-weight:700; font-size:1.2rem; color:var(--secondary);">$${grandTotal}</span>
+                        </div>`;
+
+                    container.innerHTML = tableHeader + rows + totalRow;
                 }
                 showView('view-all-orders');
             } catch (e) {
