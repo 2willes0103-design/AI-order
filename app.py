@@ -42,38 +42,35 @@ def gas_proxy():
     try:
         if request.method == 'GET':
             params = request.args.to_dict()
-            resp = requests.get(gas_url, params=params, allow_redirects=True)
-            print(f"--- GET Proxy: {params.get('action')} -> Status {resp.status_code}")
+            print(f"--- GET Proxy: {params.get('action')}")
+            resp = requests.get(gas_url, params=params, allow_redirects=True, timeout=30)
+            print(f"--- GET Proxy Result: Status {resp.status_code}")
             try:
-                # Attempt to return the JSON directly
                 return jsonify(resp.json())
             except:
-                # If GAS returns something else (like an error page), forward it as text
                 return resp.text, resp.status_code
         else:
-            # POST: 使用 Session 處理可能的轉發並保持 Method
             headers = {'Content-Type': 'application/json'}
             post_data = request.get_data()
-            
             print(f"--- POST Proxy: Sending {len(post_data)} bytes to GAS")
-            
-            # GAS 流程：POST 觸發 doPost → 302 redirect → GET 取回結果
-            # allow_redirects=True 會在 302 時自動轉成 GET，這是正確行為
-            resp = requests.post(gas_url, data=post_data, headers=headers, allow_redirects=True)
-
+            resp = requests.post(gas_url, data=post_data, headers=headers, allow_redirects=True, timeout=30)
             print(f"--- POST Proxy Result: Status {resp.status_code}")
-            print(f"--- Raw Response from Google: {resp.text[:500]}")
-
-            # 嘗試回傳 JSON，失敗時包成 JSON 錯誤回傳（避免前端收到 HTML）
+            print(f"--- Raw Response: {resp.text[:500]}")
             try:
                 result = resp.json()
                 return jsonify(result)
             except Exception:
-                print(f"--- GAS 回傳非 JSON，內容: {resp.text[:200]}")
-                return jsonify({"error": f"GAS 回傳非 JSON 內容 (HTTP {resp.status_code})，可能是權限或部署問題", "raw": resp.text[:300]}), 502
+                print(f"--- GAS 回傳非 JSON: {resp.text[:200]}")
+                return jsonify({"error": f"GAS 回傳非 JSON (HTTP {resp.status_code})", "raw": resp.text[:300]}), 502
+    except requests.exceptions.Timeout:
+        print("--- Proxy Timeout: GAS 沒有在 30 秒內回應")
+        return jsonify({"error": "GAS 連線逾時，請稍後再試"}), 504
+    except requests.exceptions.SSLError as e:
+        print(f"--- Proxy SSL Error: {str(e)}")
+        return jsonify({"error": f"SSL 憑證錯誤: {str(e)}"}), 502
     except Exception as e:
-        print(f"--- Proxy Critical Error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        print(f"--- Proxy Critical Error: {type(e).__name__}: {str(e)}")
+        return jsonify({"error": f"{type(e).__name__}: {str(e)}"}), 500
 
 @app.route('/recognize', methods=['POST'])
 def recognize_menu():
