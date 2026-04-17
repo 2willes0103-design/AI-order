@@ -1022,7 +1022,7 @@
                     alert('辨識失敗: ' + (data.error || 'API 回傳異常'));
                 }
             } catch (err) {
-                alert('無法連線至 AI 後端 (app.py)。請確認後端正在運行中。');
+                alert('辨識錯誤: ' + err.message);
             } finally {
                 document.getElementById('admin-loader').style.display = 'none';
             }
