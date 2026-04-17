@@ -11,7 +11,7 @@ CORS(app)
 
 # --- Configuration ---
 # Replace with your actual Gemini API Key
-GEMINI_API_KEY = "AIzaSyDIPMigdLI-0WWDd4-7sOkYT2nM2VRllfU"
+GEMINI_API_KEY = "AQ.Ab8RN6I7G2MxDuv9htR4-SQMqbfPOD7O2ZmDw--rzTCTQ0YWAQ"
 # Configure Gemini with explicit REST transport to bypass gRPC issues
 genai.configure(api_key=GEMINI_API_KEY, transport='rest')
 
