@@ -1,5 +1,7 @@
 import os
 import json
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import google.generativeai as genai
@@ -10,8 +12,9 @@ app = Flask(__name__, static_folder='.')
 CORS(app)
 
 # --- Configuration ---
-# Replace with your actual Gemini API Key
-GEMINI_API_KEY = "AQ.Ab8RN6I7G2MxDuv9htR4-SQMqbfPOD7O2ZmDw--rzTCTQ0YWAQ"
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("請設定環境變數 GEMINI_API_KEY")
 # Configure Gemini with explicit REST transport to bypass gRPC issues
 genai.configure(api_key=GEMINI_API_KEY, transport='rest')
 
