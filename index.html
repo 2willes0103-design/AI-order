@@ -1011,7 +1011,8 @@
             formData.append('image', file);
 
             try {
-                const response = await fetch('http://localhost:5000/recognize', { method: 'POST', body: formData });
+                const RECOGNIZE_URL = window.location.protocol === 'file:' ? "http://localhost:5000/recognize" : "/recognize";
+                const response = await fetch(RECOGNIZE_URL, { method: 'POST', body: formData });
                 const data = await response.json();
                 if (data.items) {
                     adminRecognizedMenu = data.items;
