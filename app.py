@@ -1,7 +1,7 @@
 import json
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import google.generativeai as genai
+from google import genai
 from PIL import Image
 import io
 
@@ -9,23 +9,8 @@ app = Flask(__name__, static_folder='.')
 CORS(app)
 
 # --- Configuration ---
-GEMINI_API_KEY = "AIzaSyBUlqNtdg4wpou-xOfCXxL3hqk8iG1b6Lg"
-# Configure Gemini with explicit REST transport to bypass gRPC issues
-genai.configure(api_key=GEMINI_API_KEY, transport='rest')
-
-# List available models for debugging and initialize
-try:
-    print("--- 正在檢查可用模型 ---")
-    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-    print(f"您的金鑰可使用的模型: {available_models}")
-    
-    # Use the most common one if found, otherwise default to flash
-    target_model = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
-    model = genai.GenerativeModel(target_model)
-    print(f"已選擇使用模型: {target_model}")
-except Exception as e:
-    print(f"檢查模型失敗: {str(e)}")
-    model = genai.GenerativeModel('gemini-1.5-flash')
+GEMINI_API_KEY = "AQ.Ab8RN6JwpJcu2H-QWSfDGdfloBxe1_ooXp5KusELuI3SGRMDcQ"
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Serve the frontend at the root URL
 @app.route('/')
@@ -36,7 +21,7 @@ def index():
 def gas_proxy():
     import requests
     gas_url = "https://script.google.com/macros/s/AKfycbyqafkBR1-p-CQN12V2xaUbiumyaATSt80l7AjhmFdHUck-n-8rNprIzCKiMO4GNqAL/exec"
-    
+
     try:
         if request.method == 'GET':
             params = request.args.to_dict()
@@ -74,7 +59,7 @@ def gas_proxy():
 def recognize_menu():
     if 'image' not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
-    
+
     file = request.files['image']
     image_bytes = file.read()
     img = Image.open(io.BytesIO(image_bytes))
@@ -89,17 +74,19 @@ def recognize_menu():
     """
 
     try:
-        response = model.generate_content([prompt, img])
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=[prompt, img]
+        )
         text = response.text
         print("--- AI Raw Response ---")
         print(text)
-        
-        # More robust JSON extraction
+
         import re
         json_match = re.search(r'\[.*\]', text, re.DOTALL)
         if json_match:
             text = json_match.group(0)
-        
+
         items = json.loads(text.strip())
         return jsonify({"items": items})
     except Exception as e:
