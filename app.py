@@ -9,7 +9,7 @@ app = Flask(__name__, static_folder='.')
 CORS(app)
 
 # --- Configuration ---
-GEMINI_API_KEY = "AQ.Ab8RN6I7G2MxDuv9htR4-SQMqbfPOD7O2ZmDw--rzTCTQ0YWAQ"
+GEMINI_API_KEY = "AQ.Ab8RN6KoCKzQAYHYGwvbnH6tw1z5sA9E5eLoK2SDhvWMQK94Kg"
 # Configure Gemini with explicit REST transport to bypass gRPC issues
 genai.configure(api_key=GEMINI_API_KEY, transport='rest')
 
