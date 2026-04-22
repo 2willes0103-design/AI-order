@@ -9,7 +9,7 @@ app = Flask(__name__, static_folder='.')
 CORS(app)
 
 # --- Configuration ---
-GEMINI_API_KEY = "AIzaSyAohMcYeUVkgT7--dnlYqDMLLJBvltIrn8"
+GEMINI_API_KEY = "AIzaSyA2L6swdEgq1QgW83AcjIFpxcPK1vpd4wI"
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Serve the frontend at the root URL
