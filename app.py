@@ -4,12 +4,12 @@ import re
 import os
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import anthropic
+from openai import OpenAI
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # Serve the frontend at the root URL
 @app.route('/')
@@ -74,19 +74,20 @@ def recognize_menu():
 
     try:
         image_b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
+        image_url = f"data:{media_type};base64,{image_b64}"
 
-        response = client.messages.create(
-            model="claude-opus-4-5",
+        response = client.chat.completions.create(
+            model="gpt-4o",
             max_tokens=2048,
             messages=[{
                 "role": "user",
                 "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": image_b64}},
+                    {"type": "image_url", "image_url": {"url": image_url}},
                     {"type": "text", "text": prompt}
                 ]
             }]
         )
-        text = response.content[0].text
+        text = response.choices[0].message.content
         print("--- AI Raw Response ---")
         print(text)
 
