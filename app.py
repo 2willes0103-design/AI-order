@@ -1,16 +1,15 @@
 import json
+import base64
+import re
+import os
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from google import genai
-from PIL import Image
-import io
+import anthropic
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-# --- Configuration ---
-GEMINI_API_KEY = "AIzaSyA2L6swdEgq1QgW83AcjIFpxcPK1vpd4wI"
-client = genai.Client(api_key=GEMINI_API_KEY)
+client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 # Serve the frontend at the root URL
 @app.route('/')
@@ -62,7 +61,7 @@ def recognize_menu():
 
     file = request.files['image']
     image_bytes = file.read()
-    img = Image.open(io.BytesIO(image_bytes))
+    media_type = file.mimetype if file.mimetype in ("image/jpeg", "image/png", "image/gif", "image/webp") else "image/jpeg"
 
     prompt = """
     請分析這張菜單圖片，並根據菜單上的標題提取所有餐點項目。
@@ -74,15 +73,23 @@ def recognize_menu():
     """
 
     try:
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=[prompt, img]
+        image_b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
+
+        response = client.messages.create(
+            model="claude-opus-4-5",
+            max_tokens=2048,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": image_b64}},
+                    {"type": "text", "text": prompt}
+                ]
+            }]
         )
-        text = response.text
+        text = response.content[0].text
         print("--- AI Raw Response ---")
         print(text)
 
-        import re
         json_match = re.search(r'\[.*\]', text, re.DOTALL)
         if json_match:
             text = json_match.group(0)
