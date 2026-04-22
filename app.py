@@ -1,7 +1,6 @@
 import json
 import base64
 import re
-import os
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from openai import OpenAI
@@ -9,7 +8,7 @@ from openai import OpenAI
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = OpenAI(api_key="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")
 
 # Serve the frontend at the root URL
 @app.route('/')
