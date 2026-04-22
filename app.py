@@ -8,7 +8,7 @@ from openai import OpenAI
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-client = OpenAI(api_key="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")
+client = OpenAI(api_key="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")
 
 # Serve the frontend at the root URL
 @app.route('/')
