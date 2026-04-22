@@ -1,15 +1,17 @@
 import json
-import base64
 import re
 import os
+import io
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from openai import OpenAI
+import google.generativeai as genai
+from PIL import Image
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # Serve the frontend at the root URL
 @app.route('/')
@@ -61,7 +63,6 @@ def recognize_menu():
 
     file = request.files['image']
     image_bytes = file.read()
-    media_type = file.mimetype if file.mimetype in ("image/jpeg", "image/png", "image/gif", "image/webp") else "image/jpeg"
 
     prompt = """
     請分析這張菜單圖片，並根據菜單上的標題提取所有餐點項目。
@@ -73,21 +74,9 @@ def recognize_menu():
     """
 
     try:
-        image_b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
-        image_url = f"data:{media_type};base64,{image_b64}"
-
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            max_tokens=2048,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "image_url", "image_url": {"url": image_url}},
-                    {"type": "text", "text": prompt}
-                ]
-            }]
-        )
-        text = response.choices[0].message.content
+        image = Image.open(io.BytesIO(image_bytes))
+        response = model.generate_content([prompt, image])
+        text = response.text
         print("--- AI Raw Response ---")
         print(text)
 
