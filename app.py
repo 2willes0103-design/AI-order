@@ -21,7 +21,7 @@ def index():
 @app.route('/proxy', methods=['GET', 'POST'])
 def gas_proxy():
     import requests
-    gas_url = "https://script.google.com/macros/s/AKfycbx1YNYpWLNDUVJEwseIjwAp64XGLPpFFmBn8r9R-RhxAVnfxG9fu0EEM1G4z9HppSEQ/exec"
+    gas_url = "https://script.google.com/macros/s/AKfycbxBkfJfKfY5ZoRkCS-Hh1PsOhitC86fXY-pfd7uSlrgNpXAUkObEZqSHXJVIXqzQtxW/exec"
 
     try:
         if request.method == 'GET':
@@ -32,6 +32,7 @@ def gas_proxy():
             try:
                 return jsonify(resp.json())
             except:
+                print(f"--- GET GAS 回傳非 JSON: {resp.text[:500]}")
                 return jsonify({"error": f"GAS 回傳非 JSON (HTTP {resp.status_code})", "raw": resp.text[:300]}), 502
         else:
             headers = {'Content-Type': 'application/json'}

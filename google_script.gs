@@ -4,7 +4,7 @@
 
 function doGet(e) {
   const action = e.parameter.action;
-  const ss = SpreadsheetApp.openById("1Pl2ybkshgPB6kLUH0UOrXRuif-x4o2K9Uilqu9DvBVU");
+  const ss = SpreadsheetApp.openById("1bvLS2zbhpqRzyvQ0qG5ezwESKclAgmoHEalEVja3B5Y");
 
   try {
     if (action === "get_status") {
@@ -84,7 +84,7 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  const ss = SpreadsheetApp.openById("1Pl2ybkshgPB6kLUH0UOrXRuif-x4o2K9Uilqu9DvBVU");
+  const ss = SpreadsheetApp.openById("1bvLS2zbhpqRzyvQ0qG5ezwESKclAgmoHEalEVja3B5Y");
   try {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
