@@ -4,8 +4,8 @@
 
 function doGet(e) {
   const action = e.parameter.action;
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
+  const ss = SpreadsheetApp.openById("1Pl2ybkshgPB6kLUH0UOrXRuif-x4o2K9Uilqu9DvBVU");
+
   try {
     if (action === "get_status") {
       const config = getOrCreateSheet(ss, "Config", [["Key", "Value"], ["active_restaurant", ""]]);
@@ -49,6 +49,15 @@ function doGet(e) {
       return response({ status: "success" });
     }
 
+    if (action === "get_recommend") {
+      const recSheet = ss.getSheetByName("recommend");
+      if (!recSheet) return response({ items: [] });
+      const data = recSheet.getDataRange().getValues();
+      if (data.length <= 1) return response({ items: [] });
+      const items = data.slice(1).map(r => ({ name: r[0], price: r[1], note: r[2] }));
+      return response({ items: items });
+    }
+
     if (action === "get_all_orders") {
       const orderSheet = ss.getSheetByName("Orders");
       if (!orderSheet) return response({ orders: [] });
@@ -75,7 +84,7 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById("1Pl2ybkshgPB6kLUH0UOrXRuif-x4o2K9Uilqu9DvBVU");
   try {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
@@ -106,10 +115,10 @@ function doPost(e) {
     if (action === "set_active_restaurant") {
       const config = getOrCreateSheet(ss, "Config", [["Key", "Value"]]);
       config.getRange(2, 2).setValue(data.restaurant_name);
-      
+
       const menuSheet = getOrCreateSheet(ss, "Menu", [["名稱", "價格", "分類"]]);
       menuSheet.clear();
-      
+
       const rows = [["名稱", "價格", "分類"]];
       if (data.menu && data.menu.length > 0) {
         data.menu.forEach(item => rows.push([item.name, item.price, item.category || ""]));

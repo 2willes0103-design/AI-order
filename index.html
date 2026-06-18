@@ -303,6 +303,96 @@
             color: white;
             border-color: var(--primary);
         }
+
+        /* 推薦按鈕 */
+        .btn-recommend {
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(236, 72, 153, 0.5);
+            background: rgba(236, 72, 153, 0.15);
+            color: var(--secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .btn-recommend:hover {
+            background: rgba(236, 72, 153, 0.3);
+        }
+
+        /* 推薦 Modal */
+        #recommend-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        #recommend-modal.open {
+            display: flex;
+        }
+        .recommend-box {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.25s ease;
+        }
+        .recommend-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .recommend-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--secondary);
+        }
+        .recommend-close {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .recommend-close:hover { background: rgba(255,255,255,0.15); }
+        .recommend-body {
+            overflow-y: auto;
+            padding: 1rem 1.5rem 1.5rem;
+        }
+        .recommend-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .recommend-table th {
+            text-align: left;
+            color: #94a3b8;
+            font-weight: 600;
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .recommend-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: top;
+        }
+        .recommend-table td:nth-child(2) { color: #a5f3a5; font-weight: 600; }
+        .recommend-table td:nth-child(3) { color: #94a3b8; font-size: 0.82rem; }
     </style>
 </head>
 
@@ -438,6 +528,21 @@
                 <button class="btn btn-primary" id="save-to-lib-btn" onclick="saveToLibraryOnly()">建立新開團</button>
                 <button class="btn btn-outline" onclick="showAllOrders('view-admin')">查看其他人點什麼</button>
                 <button class="btn btn-outline" onclick="showView('view-home')">返回首頁</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 推薦 Modal -->
+    <div id="recommend-modal">
+        <div class="recommend-box">
+            <div class="recommend-header">
+                <h3>今日推薦</h3>
+                <button class="recommend-close" onclick="closeRecommendModal()">✕</button>
+            </div>
+            <div class="recommend-body">
+                <div id="recommend-content">
+                    <div class="spinner" style="margin: 2rem auto;"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -731,8 +836,9 @@
             <div style="display:flex; justify-content:space-between; align-items:center; gap:15px; text-align:left;">
                 <h2 style="margin:0; font-size:1.3rem; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${activeRestaurant}</h2>
                 <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                    <button class="btn-recommend" onclick="openRecommendModal()">推薦</button>
                     <span style="font-size:0.9rem; color:#94a3b8; white-space:nowrap;">訂購人:</span>
-                    <input type="text" value="${name}" oninput="updateUserName(this.value)" 
+                    <input type="text" value="${name}" oninput="updateUserName(this.value)"
                         style="width: 100px; padding: 8px 12px; margin-bottom:0; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); border-radius:10px; font-weight:600; color:var(--primary); font-size:0.95rem;">
                 </div>
             </div>
@@ -1044,6 +1150,46 @@
             </div>
         `).join('');
         }
+
+        async function openRecommendModal() {
+            const modal = document.getElementById('recommend-modal');
+            const content = document.getElementById('recommend-content');
+            modal.classList.add('open');
+            content.innerHTML = '<div class="spinner" style="margin: 2rem auto;"></div>';
+            try {
+                const res = await fetch(`${GAS_URL}?action=get_recommend&_t=${Date.now()}`);
+                const data = await res.json();
+                if (!data.items || data.items.length === 0) {
+                    content.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:2rem;">目前沒有推薦項目</p>';
+                    return;
+                }
+                content.innerHTML = `
+                    <table class="recommend-table">
+                        <thead>
+                            <tr><th>餐點</th><th>金額</th><th>備註</th></tr>
+                        </thead>
+                        <tbody>
+                            ${data.items.map(item => `
+                                <tr>
+                                    <td>${item.name || ''}</td>
+                                    <td>${item.price !== '' && item.price !== undefined ? '$' + item.price : '--'}</td>
+                                    <td>${item.note || ''}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>`;
+            } catch (e) {
+                content.innerHTML = `<p style="color:#ef4444; text-align:center; padding:1rem;">載入失敗: ${e.message}</p>`;
+            }
+        }
+
+        function closeRecommendModal() {
+            document.getElementById('recommend-modal').classList.remove('open');
+        }
+
+        document.getElementById('recommend-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeRecommendModal();
+        });
 
         async function setActiveRestaurant() {
             const resName = document.getElementById('newResName').value;
