@@ -21,7 +21,7 @@ def index():
 @app.route('/proxy', methods=['GET', 'POST'])
 def gas_proxy():
     import requests
-    gas_url = "https://script.google.com/macros/s/AKfycbw0AywNtPPYKx-ZvcfUjFgVp08B5AHCt9AHQQMJn0XfANRR_7QnEev4vOeOMJ2dmhIp/exec"
+    gas_url = "https://script.google.com/macros/s/AKfycbwYf6kuyyCtOx3zMZVaCovrhu0lSxuMCG4BeTHQ-n9EYZzYD-897U2mSMIVPh-JcPTX/exec"
 
     try:
         if request.method == 'GET':
