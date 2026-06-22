@@ -4,7 +4,7 @@
 
 function doGet(e) {
   const action = e.parameter.action;
-  const ss = SpreadsheetApp.openById("1bvLS2zbhpqRzyvQ0qG5ezwESKclAgmoHEalEVja3B5Y");
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   try {
     if (action === "get_status") {
@@ -84,7 +84,7 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  const ss = SpreadsheetApp.openById("1bvLS2zbhpqRzyvQ0qG5ezwESKclAgmoHEalEVja3B5Y");
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
   try {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
@@ -141,6 +141,17 @@ function doPost(e) {
           index === 0 ? (data.note || "") : ""
         ]);
         orderSheet.getRange(orderSheet.getLastRow() + 1, 1, orderRows.length, 6).setValues(orderRows);
+      }
+      return response({ status: "success" });
+    }
+
+    if (action === "set_recommend") {
+      const recSheet = getOrCreateSheet(ss, "recommend", [["名稱", "金額", "備註"]]);
+      recSheet.clear();
+      recSheet.getRange(1, 1, 1, 3).setValues([["名稱", "金額", "備註"]]);
+      if (data.items && data.items.length > 0) {
+        const rows = data.items.map(item => [item.name || "", item.price !== undefined ? item.price : "", item.note || ""]);
+        recSheet.getRange(2, 1, rows.length, 3).setValues(rows);
       }
       return response({ status: "success" });
     }

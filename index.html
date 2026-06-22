@@ -407,7 +407,8 @@
                     今天吃甚麼?</h1>
                 <p style="margin-bottom: 2.5rem; color: #94a3b8;">AI菜單辨識平台</p>
                 <button class="btn btn-primary" onclick="showView('view-login')">🍴 我要點餐</button>
-                <button class="btn btn-outline" onclick="showView('view-admin')">⚙️ 管理員模式</button>
+                <button class="btn btn-outline" onclick="showAllOrders('view-home')">👀 查看其他人點甚麼</button>
+                <button class="btn btn-outline" onclick="showAdminPasswordModal()">⚙️ 管理員模式</button>
             </div>
         </div>
 
@@ -469,7 +470,7 @@
                 <p style="color: #94a3b8;">訂單已成功送出</p>
             </div>
             <button class="btn btn-primary" onclick="showAllOrders('view-summary')">其他人點什麼</button>
-            <button class="btn btn-outline" onclick="showView('view-admin')">進入管理員模式</button>
+            <button class="btn btn-outline" onclick="showAdminPasswordModal()">進入管理員模式</button>
             <button class="btn btn-outline" onclick="location.reload()">回到首頁開始新點餐</button>
         </div>
 
@@ -526,6 +527,7 @@
                 </div>
 
                 <button class="btn btn-primary" id="save-to-lib-btn" onclick="saveToLibraryOnly()">建立新開團</button>
+                <button class="btn btn-outline" onclick="openAdminRecommendModal()">⭐ 編輯推薦餐點</button>
                 <button class="btn btn-outline" onclick="showAllOrders('view-admin')">查看其他人點什麼</button>
                 <button class="btn btn-outline" onclick="showView('view-home')">返回首頁</button>
             </div>
@@ -543,6 +545,43 @@
                 <div id="recommend-content">
                     <div class="spinner" style="margin: 2rem auto;"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Password Modal -->
+    <div id="admin-pw-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:3000; align-items:center; justify-content:center; padding:1rem;">
+        <div style="background:#1e293b; border:1px solid rgba(255,255,255,0.12); border-radius:20px; padding:2rem; width:100%; max-width:360px; animation:fadeIn 0.25s ease;">
+            <h3 style="margin-bottom:1.5rem; text-align:center;">管理員驗證</h3>
+            <!-- 密碼修改：改 ADMIN_PASSWORD 常數即可；輸入長度上限由下方 maxlength 控制 -->
+            <input type="password" id="admin-pw-input" placeholder="請輸入密碼" maxlength="4"
+                style="text-align:center; letter-spacing:8px; font-size:1.5rem; margin-bottom:0.5rem;"
+                onkeydown="if(event.key==='Enter') verifyAdminPassword()">
+            <p id="admin-pw-error" style="color:#ef4444; text-align:center; margin-bottom:1rem; display:none; font-size:0.9rem;">密碼錯誤，請再試一次</p>
+            <div style="display:flex; gap:10px; margin-top:1rem;">
+                <button class="btn btn-outline" onclick="closeAdminPasswordModal()" style="flex:1; padding:0.8rem; margin-bottom:0;">取消</button>
+                <button class="btn btn-primary" onclick="verifyAdminPassword()" style="flex:1; padding:0.8rem; margin-bottom:0;">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Recommend Edit Modal -->
+    <div id="admin-recommend-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:2500; align-items:center; justify-content:center; padding:1rem;">
+        <div style="background:#1e293b; border:1px solid rgba(255,255,255,0.12); border-radius:20px; width:100%; max-width:500px; max-height:85vh; display:flex; flex-direction:column; animation:fadeIn 0.25s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:1.2rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+                <h3 style="margin:0; color:var(--secondary);">編輯推薦餐點</h3>
+                <button onclick="closeAdminRecommendModal()" style="background:rgba(255,255,255,0.08); border:none; color:white; width:30px; height:30px; border-radius:8px; font-size:1.1rem; cursor:pointer; line-height:1;">✕</button>
+            </div>
+            <div style="overflow-y:auto; padding:1rem 1.5rem; flex:1;">
+                <div style="display:grid; grid-template-columns:2fr 1fr 1.5fr auto; gap:6px; margin-bottom:8px; font-size:0.8rem; color:#94a3b8; font-weight:600; padding:0 4px;">
+                    <span>餐點名稱</span><span>金額</span><span>備註</span><span></span>
+                </div>
+                <div id="admin-recommend-list"></div>
+                <button onclick="addAdminRecommendItem()" class="btn btn-outline" style="padding:0.6rem 1rem; font-size:0.9rem; margin-top:0.5rem;">+ 新增項目</button>
+            </div>
+            <div style="padding:1rem 1.5rem; border-top:1px solid rgba(255,255,255,0.08); display:flex; gap:10px;">
+                <button class="btn btn-outline" onclick="closeAdminRecommendModal()" style="flex:1; padding:0.8rem; margin-bottom:0;">取消</button>
+                <button class="btn btn-primary" onclick="saveAdminRecommend()" id="save-recommend-btn" style="flex:2; padding:0.8rem; margin-bottom:0;">儲存推薦</button>
             </div>
         </div>
     </div>
@@ -1190,6 +1229,135 @@
         document.getElementById('recommend-modal').addEventListener('click', function(e) {
             if (e.target === this) closeRecommendModal();
         });
+
+        // ===== 管理員密碼 =====
+        // 修改密碼：直接改下方 ADMIN_PASSWORD 的值
+        // 修改密碼長度上限：同步修改 HTML #admin-pw-input 元素的 maxlength 屬性
+        const ADMIN_PASSWORD = "5429";
+
+        function showAdminPasswordModal() {
+            const modal = document.getElementById('admin-pw-modal');
+            document.getElementById('admin-pw-input').value = '';
+            document.getElementById('admin-pw-error').style.display = 'none';
+            modal.style.display = 'flex';
+            setTimeout(() => document.getElementById('admin-pw-input').focus(), 100);
+        }
+
+        function closeAdminPasswordModal() {
+            document.getElementById('admin-pw-modal').style.display = 'none';
+        }
+
+        function verifyAdminPassword() {
+            const input = document.getElementById('admin-pw-input').value;
+            const error = document.getElementById('admin-pw-error');
+            if (input === ADMIN_PASSWORD) {
+                closeAdminPasswordModal();
+                showView('view-admin');
+            } else {
+                error.style.display = 'block';
+                document.getElementById('admin-pw-input').value = '';
+                document.getElementById('admin-pw-input').focus();
+            }
+        }
+
+        // ===== 管理員：編輯推薦餐點 =====
+        let adminRecommendItems = [];
+        let adminMenuOptions = [];
+
+        async function openAdminRecommendModal() {
+            const modal = document.getElementById('admin-recommend-modal');
+            modal.style.display = 'flex';
+            document.getElementById('admin-recommend-list').innerHTML = '<div class="spinner" style="margin:2rem auto;"></div>';
+            try {
+                const [recRes, statusRes] = await Promise.all([
+                    fetch(`${GAS_URL}?action=get_recommend&_t=${Date.now()}`),
+                    fetch(`${GAS_URL}?action=get_status&_t=${Date.now()}`)
+                ]);
+                const recData = await recRes.json();
+                const statusData = await statusRes.json();
+                adminRecommendItems = recData.items || [];
+                adminMenuOptions = statusData.menu || [];
+            } catch (e) {
+                adminRecommendItems = [];
+                adminMenuOptions = [];
+            }
+            renderAdminRecommendList();
+        }
+
+        function closeAdminRecommendModal() {
+            document.getElementById('admin-recommend-modal').style.display = 'none';
+        }
+
+        function selectRecommendItem(i, name) {
+            adminRecommendItems[i].name = name;
+            const found = adminMenuOptions.find(m => m.name === name);
+            if (found && found.price !== undefined) {
+                adminRecommendItems[i].price = found.price;
+                const priceInput = document.getElementById(`rec-price-${i}`);
+                if (priceInput) priceInput.value = found.price;
+            }
+        }
+
+        function renderAdminRecommendList() {
+            const listDiv = document.getElementById('admin-recommend-list');
+            if (adminRecommendItems.length === 0) {
+                listDiv.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:1rem 0;">目前沒有推薦項目，點「+ 新增項目」開始新增</p>';
+                return;
+            }
+            const inputStyle = 'margin:0; padding:8px; font-size:0.9rem;';
+            const selectStyle = `${inputStyle} appearance:none; cursor:pointer;`;
+            listDiv.innerHTML = adminRecommendItems.map((item, i) => {
+                const nameField = adminMenuOptions.length > 0
+                    ? `<select onchange="selectRecommendItem(${i}, this.value)" style="${selectStyle}">
+                        <option value="">-- 選擇餐點 --</option>
+                        ${adminMenuOptions.map(m => `<option value="${m.name}" ${m.name === item.name ? 'selected' : ''}>${m.name}</option>`).join('')}
+                       </select>`
+                    : `<input type="text" value="${item.name || ''}" placeholder="餐點名稱"
+                        oninput="adminRecommendItems[${i}].name=this.value" style="${inputStyle}">`;
+                return `
+                <div style="display:grid; grid-template-columns:2fr 1fr 1.5fr auto; gap:6px; margin-bottom:8px; align-items:center;">
+                    ${nameField}
+                    <input type="text" id="rec-price-${i}" value="${item.price !== undefined ? item.price : ''}" placeholder="自動帶入"
+                        readonly
+                        style="${inputStyle} background:rgba(255,255,255,0.04); color:#a5f3a5; cursor:default;">
+                    <input type="text" value="${item.note || ''}" placeholder="備註"
+                        oninput="adminRecommendItems[${i}].note=this.value"
+                        style="${inputStyle}">
+                    <button onclick="adminRecommendItems.splice(${i},1); renderAdminRecommendList();"
+                        style="border:none; background:#ef4444; color:white; width:30px; height:30px; border-radius:8px; cursor:pointer; font-size:1rem; flex-shrink:0;">×</button>
+                </div>`;
+            }).join('');
+        }
+
+        function addAdminRecommendItem() {
+            adminRecommendItems.push({ name: '', price: '', note: '' });
+            renderAdminRecommendList();
+        }
+
+        async function saveAdminRecommend() {
+            const btn = document.getElementById('save-recommend-btn');
+            btn.disabled = true;
+            btn.innerText = '儲存中...';
+            try {
+                const res = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'set_recommend', items: adminRecommendItems })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert('推薦餐點已儲存！');
+                    closeAdminRecommendModal();
+                } else {
+                    throw new Error(result.error || '儲存失敗');
+                }
+            } catch (e) {
+                alert('儲存失敗: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '儲存推薦';
+            }
+        }
 
         async function setActiveRestaurant() {
             const resName = document.getElementById('newResName').value;
